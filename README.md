@@ -1,8 +1,25 @@
 # 🏏 Cricket Hotseat Sprint
 
+[![▶ Play now](https://img.shields.io/badge/%E2%96%B6%20Play%20now-live-brightgreen?style=for-the-badge)](https://sd3201781-arch.github.io/Culor-Blue-Z-/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-2ea44f?style=for-the-badge&logo=github)](https://sd3201781-arch.github.io/Culor-Blue-Z-/)
+[![Players](https://img.shields.io/badge/players-2%E2%80%936-orange?style=for-the-badge)](https://sd3201781-arch.github.io/Culor-Blue-Z-/)
+[![License](https://img.shields.io/badge/license-Unlicense-blue?style=for-the-badge)](LICENSE)
+
 A fast, **timing-based cricket batting arcade game** you play *hotseat-style* — pass the phone around and see who can score the most runs.
 
 Built as a single, self-contained `index.html` file. No build step, no dependencies, no internet required.
+
+---
+
+## ▶️ Play it live
+
+### 👉 **[sd3201781-arch.github.io/Culor-Blue-Z-](https://sd3201781-arch.github.io/Culor-Blue-Z-/)**
+
+No install, no sign-up — just open the link in any browser, on phone, tablet or desktop, and play.
+
+**Cricket Hotseat Sprint** is a **2–6 player, pass-and-play, timing-based cricket batting arcade game**. You tap/press to swing as the ball reaches the green zone on the timing bar — nail it for a six, mistime it and you're bowled. Each player gets 6 balls and 3 wickets; the highest total wins.
+
+> Hosted free with **GitHub Pages**, served straight from the `main` branch of this repo.
 
 ---
 
@@ -46,7 +63,7 @@ python3 -m http.server 8000
 ```
 
 **Option C — play online**
-👉 Live demo: _add your GitHub Pages / hosting link here_
+👉 Live demo: **[https://sd3201781-arch.github.io/Culor-Blue-Z-/](https://sd3201781-arch.github.io/Culor-Blue-Z-/)** (GitHub Pages, auto-deployed from `main`)
 
 ## ✨ Features
 
