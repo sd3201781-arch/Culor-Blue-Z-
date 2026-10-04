@@ -1,13 +1,515 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cricket Hotseat Sprint Game</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Cricket Hotseat Sprint</title>
+  <style>
+    :root {
+      --sky1: #38bdf8; --sky2: #7dd3fc; --grass: #16a34a; --grass2: #15803d;
+      --ink: #0f172a; --gold: #facc15; --gold-dark: #ca8a04;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(to bottom, var(--sky1), var(--sky2) 55%, var(--grass) 100%);
+      color: #fff; touch-action: manipulation; user-select: none;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .hud {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 14px; display: flex; justify-content: space-between;
+      align-items: flex-start; pointer-events: none;
+    }
+    .glass {
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.28);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-radius: 18px; padding: 10px 20px;
+    }
+    .hud .label { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; opacity: .85; font-weight: 700; }
+    .hud .value { font-size: 24px; font-weight: 900; line-height: 1.1; }
+    .hud .right { text-align: right; }
+    .glow { text-shadow: 0 0 12px rgba(255,255,255,.6); }
+
+    #overlay {
+      position: absolute; inset: 0; z-index: 30; display: flex;
+      align-items: center; justify-content: center; padding: 16px;
+      background: rgba(2,6,23,.45); backdrop-filter: blur(4px);
+    }
+    #overlay.hidden { display: none; }
+    .panel {
+      width: 100%; max-width: 440px; border-radius: 28px; padding: 30px;
+      background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35);
+      border-top: 2px solid rgba(255,255,255,.6);
+      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      text-align: center;
+    }
+    .panel h1 { margin: 0 0 6px; font-size: 44px; font-weight: 900; letter-spacing: -.02em; font-style: italic; }
+    .panel p.sub { margin: 0 0 22px; color: #e0f2fe; font-weight: 600; font-size: 15px; }
+    .setup { background: rgba(0,0,0,.22); border-radius: 18px; padding: 18px; margin-bottom: 22px; }
+    .setup .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .setup label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; opacity: .8; }
+    .setup .count { font-size: 26px; font-weight: 900; color: var(--gold); }
+    input[type=range] { width: 100%; height: 8px; border-radius: 8px; background: rgba(255,255,255,.25); appearance: none; -webkit-appearance: none; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); border: 3px solid #fff; }
+    .btn {
+      width: 100%; border: none; border-radius: 18px; padding: 16px;
+      font-size: 19px; font-weight: 900; cursor: pointer; font-family: inherit;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .btn:active { transform: scale(.95); }
+    .btn-primary { background: var(--gold); color: #1e3a8a; box-shadow: 0 5px 0 0 var(--gold-dark); }
+    .btn-primary:active { box-shadow: 0 1px 0 0 var(--gold-dark); transform: translateY(3px) scale(.99); }
+    .btn-secondary { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.35); margin-top: 12px; }
+    .btn-secondary.hidden { display: none; }
+    .scoreboard { margin-top: 18px; text-align: left; }
+    .scoreboard .row { display: flex; justify-content: space-between; padding: 9px 14px; border-radius: 12px; background: rgba(0,0,0,.18); margin-bottom: 8px; font-weight: 700; }
+    .scoreboard .row.win { background: rgba(250,204,21,.28); border: 1px solid var(--gold); }
+    .scoreboard .row .medal { margin-right: 8px; }
+    .hint { margin-top: 16px; font-size: 13px; opacity: .85; }
+    .badge { display:inline-block; background: rgba(0,0,0,.25); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; letter-spacing:.05em; margin-bottom: 14px; }
+  </style>
 </head>
 <body>
-    <h1>Welcome to the Cricket Hotseat Sprint Game!</h1>
-    <p>Enjoy the game and have fun!</p>
-    <!-- Additional game implementation goes here -->
+  <div class="hud">
+    <div class="glass">
+      <div class="label">Innings</div>
+      <div class="value" id="hudPlayer">PLAYER 1</div>
+    </div>
+    <div class="glass right">
+      <div class="label">Runs (Meters)</div>
+      <div class="value glow"><span id="hudScore">0</span>m</div>
+    </div>
+  </div>
+
+  <canvas id="game"></canvas>
+
+  <div id="overlay">
+    <div class="panel">
+      <div class="badge" id="badge">🏏 HOTSEAT</div>
+      <h1 id="overlayTitle">READY?</h1>
+      <p class="sub" id="overlayText">Tap or press Space to jump over the wickets. One chance per player!</p>
+
+      <div class="setup" id="setupControls">
+        <div class="row">
+          <label for="playerCount">Number of Players</label>
+          <span class="count" id="playerCountLabel">4</span>
+        </div>
+        <input id="playerCount" type="range" min="2" max="6" value="4" />
+      </div>
+
+      <button id="primaryBtn" class="btn btn-primary">START MATCH</button>
+      <button id="secondaryBtn" class="btn btn-secondary hidden">VIEW SCOREBOARD</button>
+
+      <div class="scoreboard hidden" id="scoreboard"></div>
+      <div class="hint" id="hint">Tip: tap the screen, click, or press Space / ↑ to jump.</div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    var canvas = document.getElementById('game');
+    var ctx = canvas.getContext('2d');
+    var hudPlayer = document.getElementById('hudPlayer');
+    var hudScore = document.getElementById('hudScore');
+    var overlay = document.getElementById('overlay');
+    var overlayTitle = document.getElementById('overlayTitle');
+    var overlayText = document.getElementById('overlayText');
+    var badge = document.getElementById('badge');
+    var primaryBtn = document.getElementById('primaryBtn');
+    var secondaryBtn = document.getElementById('secondaryBtn');
+    var setupControls = document.getElementById('setupControls');
+    var scoreboardEl = document.getElementById('scoreboard');
+    var hintEl = document.getElementById('hint');
+    var playerCountInput = document.getElementById('playerCount');
+    var playerCountLabel = document.getElementById('playerCountLabel');
+
+    var W = 0, H = 0, DPR = 1;
+    var running = false;
+    var currentPlayer = 0;
+    var totalPlayers = 4;
+    var scores = [];
+    var speed = 6;
+    var distance = 0;
+    var obstacles = [];
+    var spawnTimer = 0;
+    var lastTime = 0;
+    var particles = [];
+    var clouds = [];
+    var groundY = 0;
+
+    var player = {
+      x: 0, y: 0, r: 25, vy: 0, rotation: 0,
+      jumpPower: -16, gravity: 0.8, onGround: false
+    };
+
+    function resize() {
+      DPR = window.devicePixelRatio || 1;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      groundY = H * 0.8;
+      player.x = W * 0.2;
+      player.r = Math.max(14, Math.min(W, H) * 0.04);
+      if (!running) {
+        player.y = groundY - player.r;
+      }
+      buildClouds();
+    }
+
+    function buildClouds() {
+      clouds = [];
+      var n = Math.max(3, Math.round(W / 320));
+      for (var i = 0; i < n; i++) {
+        clouds.push({
+          x: Math.random() * W,
+          y: H * (0.08 + Math.random() * 0.28),
+          s: 0.6 + Math.random() * 0.9,
+          v: 0.15 + Math.random() * 0.25
+        });
+      }
+    }
+
+    function spawnObstacle() {
+      var types = ['stumps', 'bat', 'bottle'];
+      var type = types[Math.floor(Math.random() * types.length)];
+      var w, h;
+      if (type === 'stumps') { w = 40; h = 70; }
+      else if (type === 'bat') { w = 60; h = 30; }
+      else { w = 26; h = 52; }
+      obstacles.push({ x: W + 100, y: groundY, w: w, h: h, type: type, passed: false });
+    }
+
+    function spawnDust(x, y) {
+      for (var i = 0; i < 8; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * 3,
+          vy: -Math.random() * 3 - 1,
+          life: 1, size: 2 + Math.random() * 3
+        });
+      }
+    }
+
+    function update(dt) {
+      if (!running) return;
+      var step = Math.min(dt, 50) / 16.67; // normalize to ~60fps
+
+      distance += speed * 0.1 * step;
+      speed += 0.002 * step;
+      hudScore.innerText = Math.floor(distance);
+
+      // Physics
+      player.vy += player.gravity * step;
+      player.y += player.vy * step;
+      player.rotation += speed * 0.05 * step;
+
+      var ground = groundY - player.r;
+      if (player.y > ground) {
+        if (!player.onGround) spawnDust(player.x, groundY);
+        player.y = ground;
+        player.vy = 0;
+        player.onGround = true;
+      }
+
+      // Obstacles
+      spawnTimer -= dt;
+      if (spawnTimer < 0) {
+        spawnObstacle();
+        spawnTimer = 900 + Math.random() * 1400;
+      }
+
+      for (var i = obstacles.length - 1; i >= 0; i--) {
+        var o = obstacles[i];
+        o.x -= speed * step;
+        // Collision (circle vs rect)
+        var cx = Math.max(o.x, Math.min(player.x, o.x + o.w));
+        var cy = Math.max(o.y - o.h, Math.min(player.y, o.y));
+        var dx = player.x - cx, dy = player.y - cy;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < player.r * 0.8) { gameOver(); return; }
+        if (!o.passed && o.x + o.w < player.x) {
+          o.passed = true;
+          distance += 5; // bonus for clearing an obstacle
+        }
+        if (o.x < -120) obstacles.splice(i, 1);
+      }
+
+      // Particles
+      for (var p = particles.length - 1; p >= 0; p--) {
+        var pt = particles[p];
+        pt.x += pt.vx * step;
+        pt.y += pt.vy * step;
+        pt.vy += 0.15 * step;
+        pt.life -= 0.03 * step;
+        if (pt.life <= 0) particles.splice(p, 1);
+      }
+
+      // Clouds
+      for (var c = 0; c < clouds.length; c++) {
+        clouds[c].x -= clouds[c].v * step;
+        if (clouds[c].x < -120) { clouds[c].x = W + 120; clouds[c].y = H * (0.08 + Math.random() * 0.28); }
+      }
+    }
+
+    function drawCloud(x, y, s) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(s, s);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2);
+      ctx.arc(26, 6, 18, 0, Math.PI * 2);
+      ctx.arc(-26, 6, 16, 0, Math.PI * 2);
+      ctx.arc(6, -12, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawObstacle(o) {
+      if (o.type === 'stumps') {
+        ctx.fillStyle = '#fde047';
+        ctx.strokeStyle = '#a16207';
+        ctx.lineWidth = 2;
+        var sw = o.w / 3;
+        for (var i = 0; i < 3; i++) {
+          ctx.fillRect(o.x + i * sw + 2, o.y - o.h, sw - 4, o.h);
+          ctx.strokeRect(o.x + i * sw + 2, o.y - o.h, sw - 4, o.h);
+        }
+        // bails
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(o.x, o.y - o.h - 6, o.w, 5);
+      } else if (o.type === 'bat') {
+        ctx.fillStyle = '#c084fc';
+        ctx.strokeStyle = '#7e22ce';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(o.x, o.y - o.h, o.w, o.h, 6) : ctx.rect(o.x, o.y - o.h, o.w, o.h);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(o.x + o.w - 12, o.y - o.h - 14, 10, 16);
+      } else {
+        ctx.fillStyle = '#22c55e';
+        ctx.strokeStyle = '#166534';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(o.x, o.y - o.h, o.w, o.h, 8) : ctx.rect(o.x, o.y - o.h, o.w, o.h);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(o.x + 4, o.y - o.h + 6, o.w - 8, 8);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Sky gradient
+      var sky = ctx.createLinearGradient(0, 0, 0, groundY);
+      sky.addColorStop(0, '#38bdf8');
+      sky.addColorStop(1, '#bae6fd');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, groundY);
+
+      // Clouds
+      for (var c = 0; c < clouds.length; c++) drawCloud(clouds[c].x, clouds[c].y, clouds[c].s);
+
+      // Ground
+      var grass = ctx.createLinearGradient(0, groundY, 0, H);
+      grass.addColorStop(0, '#22c55e');
+      grass.addColorStop(1, '#15803d');
+      ctx.fillStyle = grass;
+      ctx.fillRect(0, groundY, W, H - groundY);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(W, groundY);
+      ctx.stroke();
+
+      // Pitch stripes
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 2;
+      for (var sx = (distance * 2) % 80; sx < W; sx += 80) {
+        ctx.beginPath();
+        ctx.moveTo(sx, groundY);
+        ctx.lineTo(sx - 30, H);
+        ctx.stroke();
+      }
+
+      // Obstacles
+      for (var i = 0; i < obstacles.length; i++) drawObstacle(obstacles[i]);
+
+      // Particles
+      for (var p = 0; p < particles.length; p++) {
+        var pt = particles[p];
+        ctx.globalAlpha = Math.max(0, pt.life);
+        ctx.fillStyle = '#fef3c7';
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Player (cricket ball)
+      ctx.save();
+      ctx.translate(player.x, player.y);
+
+      // Shadow
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.ellipse(0, groundY - player.y, player.r * 1.05, player.r * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.rotate(player.rotation);
+      // Ball
+      var ballGrad = ctx.createRadialGradient(-player.r * 0.3, -player.r * 0.3, player.r * 0.2, 0, 0, player.r);
+      ballGrad.addColorStop(0, '#f87171');
+      ballGrad.addColorStop(1, '#b91c1c');
+      ctx.beginPath();
+      ctx.arc(0, 0, player.r, 0, Math.PI * 2);
+      ctx.fillStyle = ballGrad;
+      ctx.fill();
+      // Seam
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = Math.max(2, player.r * 0.12);
+      ctx.beginPath();
+      ctx.arc(0, 0, player.r * 0.92, -0.5, 0.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, player.r * 0.92, Math.PI - 0.5, Math.PI + 0.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function loop(t) {
+      var dt = lastTime ? t - lastTime : 16.67;
+      lastTime = t;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+      running = false;
+      scores[currentPlayer] = Math.floor(distance);
+      spawnDust(player.x, groundY);
+
+      var isLastPlayer = currentPlayer === totalPlayers - 1;
+      overlayTitle.innerText = 'WICKET!';
+      overlayText.innerText = 'Player ' + (currentPlayer + 1) + ' scored ' + Math.floor(distance) + ' runs.';
+      badge.innerText = '🏏 OUT';
+
+      if (isLastPlayer) {
+        primaryBtn.innerText = 'NEW TOURNAMENT';
+        secondaryBtn.classList.remove('hidden');
+        showScoreboard();
+      } else {
+        primaryBtn.innerText = 'READY PLAYER ' + (currentPlayer + 2);
+        secondaryBtn.classList.add('hidden');
+        scoreboardEl.classList.add('hidden');
+      }
+      overlay.classList.remove('hidden');
+    }
+
+    function showScoreboard() {
+      var best = Math.max.apply(null, scores);
+      var html = '';
+      for (var i = 0; i < scores.length; i++) {
+        var win = scores[i] === best ? ' win' : '';
+        var medal = scores[i] === best ? '<span class="medal">🏆</span>' : '';
+        html += '<div class="row' + win + '">' + medal + 'Player ' + (i + 1) + '<span>' + scores[i] + ' runs</span></div>';
+      }
+      scoreboardEl.innerHTML = html;
+      scoreboardEl.classList.remove('hidden');
+    }
+
+    function resetGame() {
+      distance = 0;
+      speed = 7;
+      obstacles = [];
+      particles = [];
+      spawnTimer = 600;
+      player.y = groundY - player.r;
+      player.vy = 0;
+      player.rotation = 0;
+      player.onGround = true;
+      running = true;
+      lastTime = 0;
+      overlay.classList.add('hidden');
+      hudPlayer.innerText = 'PLAYER ' + (currentPlayer + 1);
+      hudScore.innerText = '0';
+    }
+
+    function jump() {
+      if (running && player.onGround) {
+        player.vy = player.jumpPower;
+        player.onGround = false;
+        spawnDust(player.x, groundY);
+      }
+    }
+
+    function startMatch() {
+      totalPlayers = parseInt(playerCountInput.value, 10);
+      scores = new Array(totalPlayers).fill(0);
+      currentPlayer = 0;
+      setupControls.classList.add('hidden');
+      scoreboardEl.classList.add('hidden');
+      secondaryBtn.classList.add('hidden');
+      badge.innerText = '🏏 HOTSEAT';
+      resetGame();
+    }
+
+    primaryBtn.addEventListener('click', function () {
+      if (!running && (currentPlayer === totalPlayers - 1 || scores.length === 0)) {
+        startMatch();
+      } else {
+        currentPlayer++;
+        resetGame();
+      }
+    });
+
+    secondaryBtn.addEventListener('click', function () {
+      // Back to setup for a fresh tournament
+      currentPlayer = 0;
+      scores = [];
+      overlayTitle.innerText = 'READY?';
+      overlayText.innerText = 'Tap or press Space to jump over the wickets. One chance per player!';
+      badge.innerText = '🏏 HOTSEAT';
+      primaryBtn.innerText = 'START MATCH';
+      secondaryBtn.classList.add('hidden');
+      scoreboardEl.classList.add('hidden');
+      setupControls.classList.remove('hidden');
+    });
+
+    playerCountInput.addEventListener('input', function (e) {
+      playerCountLabel.innerText = e.target.value;
+    });
+
+    // Controls: tap / click / keyboard
+    window.addEventListener('pointerdown', function (e) {
+      if (e.target.closest && e.target.closest('.panel')) return; // don't jump when tapping buttons
+      jump();
+    });
+    window.addEventListener('keydown', function (e) {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        jump();
+      }
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(loop);
+  })();
+  </script>
 </body>
 </html>
