@@ -1,273 +1,69 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Cricket Hotseat Sprint</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Nunito', sans-serif; touch-action: manipulation; }
-    h1, .font-title { font-family: 'Righteous', cursive; }
-    canvas { display:block; width:100%; height:100%; image-rendering: pixelated; }
-    .glass { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(12px); }
-    .btn { transition: all .2s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
-    .btn:active { transform: scale(0.92); }
-    .score-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-  </style>
-</head>
+# 🏏 Cricket Hotseat Sprint
 
-<body class="bg-gradient-to-b from-sky-400 via-sky-300 to-green-500 min-h-screen text-white overflow-hidden">
-  <div class="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-start pointer-events-none">
-    <div class="glass rounded-2xl p-3 px-6 pointer-events-auto">
-      <div class="text-xs uppercase tracking-widest opacity-80 font-bold">Innings</div>
-      <div class="text-2xl font-black" id="hudPlayer">PLAYER 1</div>
-    </div>
-    <div class="glass rounded-2xl p-3 px-6 text-right pointer-events-auto">
-      <div class="text-xs uppercase tracking-widest opacity-80 font-bold">Runs (Meters)</div>
-      <div class="text-2xl font-black score-glow"><span id="hudScore">0</span>m</div>
-    </div>
-  </div>
+A fast, one-tap cricket arcade game you play **hotseat-style** — pass the phone around and see who can run the furthest before getting out.
 
-  <canvas id="game"></canvas>
+Built as a single, self-contained `index.html` file. No build step, no dependencies, no internet required.
 
-  <div id="overlay" class="absolute inset-0 z-30 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-    <div class="glass w-full max-w-md rounded-[2rem] p-8 shadow-2xl border-t border-white/40">
-      <div class="text-center space-y-2 mb-8">
-        <h1 class="text-5xl font-black tracking-tighter italic" id="overlayTitle">READY?</h1>
-        <p class="text-blue-50 opacity-90 font-medium" id="overlayText">Tap to jump over the wickets. One chance per player!</p>
-      </div>
+---
 
-      <div id="setupControls" class="space-y-6">
-        <div class="bg-black/20 rounded-2xl p-5">
-          <div class="flex justify-between items-center mb-2">
-            <label class="text-sm font-bold uppercase opacity-70">Number of Players</label>
-            <span class="text-2xl font-black text-yellow-300" id="playerCountLabel">4</span>
-          </div>
-          <input id="playerCount" type="range" min="2" max="6" value="4" class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-yellow-400">
-        </div>
-      </div>
+## 🎮 What is it?
 
-      <div class="mt-8 space-y-3">
-        <button id="primaryBtn" class="btn w-full rounded-2xl py-4 bg-yellow-400 text-blue-900 text-xl font-black shadow-[0_5px_0_0_#ca8a04] hover:shadow-none hover:translate-y-1">
-          START MATCH
-        </button>
-        <button id="secondaryBtn" class="btn w-full rounded-2xl py-4 bg-white/10 hover:bg-white/20 border border-white/30 font-bold hidden">
-          VIEW SCOREBOARD
-        </button>
-      </div>
-    </div>
-  </div>
+You control a cricket ball sprinting across the pitch. Wickets, bats and bottles fly at you — **jump over them** to keep your run alive. Every metre counts as a run, and clearing an obstacle gives you a bonus. Hit one and you're **out**.
 
-  <script>
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const hudPlayer = document.getElementById('hudPlayer');
-    const hudScore = document.getElementById('hudScore');
-    const overlay = document.getElementById('overlay');
-    const primaryBtn = document.getElementById('primaryBtn');
-    const secondaryBtn = document.getElementById('secondaryBtn');
+It's a *hotseat* game: set how many players are playing (2–6), and each person takes one turn. When everyone has batted, the scoreboard shows who won. 🏆
 
-    let W, H, DPR;
-    let running = false;
-    let currentPlayer = 0;
-    let totalPlayers = 4;
-    let scores = [];
-    let speed = 6;
-    let distance = 0;
-    let obstacles = [];
-    let spawnTimer = 0;
+## 🕹️ How to play
 
-    // Player Object
-    const player = {
-      x: 0, y: 0, r: 25, vy: 0, rotation: 0,
-      jumpPower: -16, gravity: 0.8, onGround: false
-    };
+1. Open `index.html` in any modern browser (or use the live link below).
+2. Choose the **number of players** (2–6) with the slider.
+3. Press **START MATCH**.
+4. **Jump** to dodge obstacles:
+   - 📱 **Tap** anywhere on the screen, or
+   - 🖱️ **Click**, or
+   - ⌨️ Press **Space**, **↑** or **W**
+5. When you hit an obstacle you're out — hand the device to the next player and press **READY PLAYER N**.
+6. After the last player, press **VIEW SCOREBOARD** to see the final standings.
 
-    function resize() {
-      DPR = window.devicePixelRatio || 1;
-      W = window.innerWidth;
-      H = window.innerHeight;
-      canvas.width = W * DPR;
-      canvas.height = H * DPR;
-      ctx.scale(DPR, DPR);
-      player.x = W * 0.2;
-      player.r = Math.min(W, H) * 0.04;
-    }
-    window.onresize = resize;
-    resize();
+**Scoring:** 1 metre = 1 run, plus a **+5 bonus** for each obstacle you clear. Highest score wins.
 
-    // Game Logic
-    function spawnObstacle() {
-      const types = ['stumps', 'bat', 'bottle'];
-      const type = types[Math.floor(Math.random() * types.length)];
-      obstacles.push({
-        x: W + 100,
-        y: H * 0.8,
-        w: type === 'stumps' ? 40 : 60,
-        h: type === 'stumps' ? 70 : 30,
-        type: type
-      });
-    }
+## 🚀 How to run it
 
-    function update(dt) {
-      if (!running) return;
+**Option A — just open it**
+Download `index.html` and double-click it. That's it.
 
-      distance += speed * 0.1;
-      speed += 0.002;
-      hudScore.innerText = Math.floor(distance);
+**Option B — serve it locally** (optional)
+```bash
+# from the project folder
+python3 -m http.server 8000
+# then visit http://localhost:8000
+```
 
-      // Physics
-      player.vy += player.gravity;
-      player.y += player.vy;
-      player.rotation += speed * 0.05;
+**Option C — play online**
+👉 Live demo: _add your GitHub Pages / hosting link here_
 
-      const ground = H * 0.8 - player.r;
-      if (player.y > ground) {
-        player.y = ground;
-        player.vy = 0;
-        player.onGround = true;
-      }
+## ✨ Features
 
-      // Obstacles
-      spawnTimer -= dt;
-      if (spawnTimer < 0) {
-        spawnObstacle();
-        spawnTimer = 1000 + Math.random() * 1500;
-      }
+- 🎯 One-tap / one-key controls — instantly playable on phone or desktop
+- 👥 Hotseat multiplayer for 2–6 players with a final scoreboard
+- 🏏 Cricket-themed obstacles: stumps, bats and bottles
+- 🌤️ Animated sky, drifting clouds, pitch stripes and dust particles
+- 📈 Speed ramps up the longer you survive
+- 📱 Fully responsive — works on any screen size
+- 📦 **Zero dependencies** — one HTML file, works offline
 
-      obstacles.forEach((o, i) => {
-        o.x -= speed;
-        // Collision (Circle vs Rect)
-        const cx = Math.max(o.x, Math.min(player.x, o.x + o.w));
-        const cy = Math.max(o.y - o.h, Math.min(player.y, o.y));
-        const dist = Math.sqrt((player.x - cx)**2 + (player.y - cy)**2);
-        
-        if (dist < player.r * 0.8) gameOver();
-      });
+## 🛠️ Tech
 
-      obstacles = obstacles.filter(o => o.x > -100);
-    }
+Plain **HTML + CSS + JavaScript** with the HTML5 `<canvas>` 2D API. No frameworks, no libraries, no build tools.
 
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
+## 📁 Project structure
 
-      // Draw Ground
-      ctx.fillStyle = '#16a34a'; // Grass
-      ctx.fillRect(0, H * 0.8, W, H * 0.2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(-10, H * 0.8, W + 20, 2);
+```
+.
+├── index.html   # the entire game
+├── README.md    # this file
+└── LICENSE      # The Unlicense (public domain)
+```
 
-      // Draw Obstacles
-      obstacles.forEach(o => {
-        ctx.fillStyle = o.type === 'stumps' ? '#fde047' : '#94a3b8';
-        ctx.fillRect(o.x, o.y - o.h, o.w, o.h);
-        // Detail
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(o.x, o.y - o.h, o.w, o.h);
-      });
+## 📜 License
 
-      // Draw Player (Cricket Ball)
-      ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.rotate(player.rotation);
-      
-      // Shadow
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.ellipse(0, player.r + (groundY() - player.y - player.r), player.r, player.r*0.3, 0, 0, Math.PI*2);
-      ctx.fill();
-
-      // Ball
-      ctx.beginPath();
-      ctx.arc(0, 0, player.r, 0, Math.PI * 2);
-      ctx.fillStyle = '#ef4444'; // Red ball
-      ctx.fill();
-      
-      // Seam
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, player.r, -0.2, 0.2);
-      ctx.stroke();
-      ctx.restore();
-
-      requestAnimationFrame(() => draw());
-    }
-
-    function groundY() { return H * 0.8; }
-
-    function gameOver() {
-      running = false;
-      scores[currentPlayer] = Math.floor(distance);
-      
-      const isLastPlayer = currentPlayer === totalPlayers - 1;
-      
-      document.getElementById('overlayTitle').innerText = "WICKET!";
-      document.getElementById('overlayText').innerText = `Player ${currentPlayer + 1} scored ${Math.floor(distance)} runs.`;
-      
-      if (isLastPlayer) {
-        primaryBtn.innerText = "NEW TOURNAMENT";
-        secondaryBtn.classList.remove('hidden');
-      } else {
-        primaryBtn.innerText = `READY PLAYER ${currentPlayer + 2}`;
-      }
-      overlay.classList.remove('hidden');
-    }
-
-    function resetGame() {
-      distance = 0;
-      speed = 7;
-      obstacles = [];
-      player.y = H * 0.8 - player.r;
-      player.vy = 0;
-      running = true;
-      overlay.classList.add('hidden');
-      hudPlayer.innerText = `PLAYER ${currentPlayer + 1}`;
-    }
-
-    // Controls
-    window.onpointerdown = () => {
-      if (running && player.onGround) {
-        player.vy = player.jumpPower;
-        player.onGround = false;
-      }
-    };
-
-    primaryBtn.onclick = () => {
-      if (!running && (currentPlayer === totalPlayers - 1 || scores.length === 0)) {
-        // Start fresh
-        totalPlayers = parseInt(document.getElementById('playerCount').value);
-        scores = new Array(totalPlayers).fill(0);
-        currentPlayer = 0;
-        document.getElementById('setupControls').classList.add('hidden');
-      } else {
-        currentPlayer++;
-      }
-      resetGame();
-    };
-
-    secondaryBtn.onclick = () => {
-      let results = scores.map((s, i) => `P${i+1}: ${s}m`).join(' | ');
-      alert("FINAL STANDINGS: " + results);
-    };
-
-    document.getElementById('playerCount').oninput = (e) => {
-      document.getElementById('playerCountLabel').innerText = e.target.value;
-    };
-
-    let lastTime = 0;
-    function loop(t) {
-      update(t - lastTime);
-      lastTime = t;
-      requestAnimationFrame(loop);
-    }
-    
-    draw();
-    loop(0);
-  </script>
-</body>
-</html>
-# Culor-Blue-Z-
+Released under **The Unlicense** — see [LICENSE](LICENSE). Free to use, modify and share.
