@@ -1,89 +1,122 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Cricket Hotseat Sprint</title>
-  <style>
-    :root {
-      --sky1: #38bdf8; --sky2: #7dd3fc; --grass: #16a34a; --grass2: #15803d;
-      --ink: #0f172a; --gold: #facc15; --gold-dark: #ca8a04;
-    }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { margin: 0; height: 100%; overflow: hidden; }
-    body {
-      font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(to bottom, var(--sky1), var(--sky2) 55%, var(--grass) 100%);
-      color: #fff; touch-action: manipulation; user-select: none;
-    }
-    canvas { display: block; width: 100%; height: 100%; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Cricket Hotseat Sprint</title>
+<style>
+  :root{
+    --sky1:#0b3d91; --sky2:#1e6fd9; --sky3:#7fc4ff;
+    --grass1:#1f9d4d; --grass2:#0f6b32;
+    --pitch1:#d9b26a; --pitch2:#c39a4e;
+    --ink:#0b1220; --gold:#ffd23f; --gold2:#c99700;
+    --red:#e63946; --white:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;overflow:hidden;}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;
+    background:#06121f;color:#fff;touch-action:manipulation;user-select:none;
+  }
+  canvas{display:block;width:100%;height:100%;}
 
-    .hud {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-      padding: 14px; display: flex; justify-content: space-between;
-      align-items: flex-start; pointer-events: none;
-    }
-    .glass {
-      background: rgba(255,255,255,.14);
-      border: 1px solid rgba(255,255,255,.28);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border-radius: 18px; padding: 10px 20px;
-    }
-    .hud .label { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; opacity: .85; font-weight: 700; }
-    .hud .value { font-size: 24px; font-weight: 900; line-height: 1.1; }
-    .hud .right { text-align: right; }
-    .glow { text-shadow: 0 0 12px rgba(255,255,255,.6); }
+  /* ---------- HUD ---------- */
+  .hud{
+    position:absolute;top:0;left:0;right:0;z-index:20;
+    padding:12px;display:flex;justify-content:space-between;align-items:flex-start;
+    pointer-events:none;gap:10px;
+  }
+  .glass{
+    background:rgba(255,255,255,.13);
+    border:1px solid rgba(255,255,255,.28);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-radius:16px;padding:9px 16px;
+    box-shadow:0 6px 20px rgba(0,0,0,.25);
+  }
+  .hud .label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;opacity:.85;font-weight:700;}
+  .hud .value{font-size:22px;font-weight:900;line-height:1.15;}
+  .hud .right{text-align:right;}
+  .glow{text-shadow:0 0 12px rgba(255,255,255,.55);}
+  .wkts{display:flex;gap:5px;justify-content:flex-end;margin-top:4px;}
+  .wkt{width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.5);}
+  .wkt.lost{background:var(--red);border-color:#ff8a94;box-shadow:0 0 8px rgba(230,57,70,.8);}
 
-    #overlay {
-      position: absolute; inset: 0; z-index: 30; display: flex;
-      align-items: center; justify-content: center; padding: 16px;
-      background: rgba(2,6,23,.45); backdrop-filter: blur(4px);
-    }
-    #overlay.hidden { display: none; }
-    .panel {
-      width: 100%; max-width: 440px; border-radius: 28px; padding: 30px;
-      background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35);
-      border-top: 2px solid rgba(255,255,255,.6);
-      box-shadow: 0 24px 60px rgba(0,0,0,.35);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      text-align: center;
-    }
-    .panel h1 { margin: 0 0 6px; font-size: 44px; font-weight: 900; letter-spacing: -.02em; font-style: italic; }
-    .panel p.sub { margin: 0 0 22px; color: #e0f2fe; font-weight: 600; font-size: 15px; }
-    .setup { background: rgba(0,0,0,.22); border-radius: 18px; padding: 18px; margin-bottom: 22px; }
-    .setup .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .setup label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; opacity: .8; }
-    .setup .count { font-size: 26px; font-weight: 900; color: var(--gold); }
-    input[type=range] { width: 100%; height: 8px; border-radius: 8px; background: rgba(255,255,255,.25); appearance: none; -webkit-appearance: none; cursor: pointer; }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); border: 3px solid #fff; }
-    .btn {
-      width: 100%; border: none; border-radius: 18px; padding: 16px;
-      font-size: 19px; font-weight: 900; cursor: pointer; font-family: inherit;
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .btn:active { transform: scale(.95); }
-    .btn-primary { background: var(--gold); color: #1e3a8a; box-shadow: 0 5px 0 0 var(--gold-dark); }
-    .btn-primary:active { box-shadow: 0 1px 0 0 var(--gold-dark); transform: translateY(3px) scale(.99); }
-    .btn-secondary { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.35); margin-top: 12px; }
-    .btn-secondary.hidden { display: none; }
-    .scoreboard { margin-top: 18px; text-align: left; }
-    .scoreboard .row { display: flex; justify-content: space-between; padding: 9px 14px; border-radius: 12px; background: rgba(0,0,0,.18); margin-bottom: 8px; font-weight: 700; }
-    .scoreboard .row.win { background: rgba(250,204,21,.28); border: 1px solid var(--gold); }
-    .scoreboard .row .medal { margin-right: 8px; }
-    .hint { margin-top: 16px; font-size: 13px; opacity: .85; }
-    .badge { display:inline-block; background: rgba(0,0,0,.25); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; letter-spacing:.05em; margin-bottom: 14px; }
-  </style>
+  /* ---------- Overlay ---------- */
+  #overlay{
+    position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+    padding:16px;background:rgba(3,10,22,.55);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+  }
+  #overlay.hidden{display:none;}
+  .panel{
+    width:100%;max-width:460px;border-radius:26px;padding:28px 26px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.32);
+    border-top:2px solid rgba(255,255,255,.6);
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    text-align:center;max-height:92vh;overflow:auto;
+  }
+  .panel h1{margin:0 0 6px;font-size:40px;font-weight:900;letter-spacing:-.02em;font-style:italic;line-height:1.05;}
+  .panel p.sub{margin:0 0 20px;color:#e0f2fe;font-weight:600;font-size:14px;line-height:1.5;}
+  .badge{
+    display:inline-block;background:rgba(0,0,0,.28);border-radius:999px;
+    padding:5px 14px;font-size:11px;font-weight:800;letter-spacing:.08em;margin-bottom:14px;
+  }
+  .setup{background:rgba(0,0,0,.22);border-radius:16px;padding:16px;margin-bottom:20px;}
+  .setup .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .setup label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.85;}
+  .setup .count{font-size:26px;font-weight:900;color:var(--gold);}
+  input[type=range]{
+    width:100%;height:8px;border-radius:8px;background:rgba(255,255,255,.25);
+    appearance:none;-webkit-appearance:none;cursor:pointer;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:var(--gold);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;background:var(--gold);border:3px solid #fff;
+  }
+  .btn{
+    width:100%;border:none;border-radius:16px;padding:15px;font-size:18px;font-weight:900;
+    cursor:pointer;font-family:inherit;letter-spacing:.02em;
+    transition:transform .12s ease,box-shadow .12s ease;
+  }
+  .btn:active{transform:scale(.96);}
+  .btn-primary{background:var(--gold);color:#1e3a8a;box-shadow:0 5px 0 0 var(--gold2);}
+  .btn-primary:active{box-shadow:0 1px 0 0 var(--gold2);transform:translateY(3px) scale(.99);}
+  .btn-secondary{
+    background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35);
+    margin-top:10px;font-size:15px;padding:12px;
+  }
+  .btn.hidden{display:none;}
+  .scoreboard{margin-top:16px;text-align:left;}
+  .scoreboard .row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.2);
+    margin-bottom:8px;font-weight:700;font-size:15px;
+  }
+  .scoreboard .row.win{background:rgba(250,204,21,.26);border:1px solid var(--gold);}
+  .scoreboard .row .medal{margin-right:8px;}
+  .hint{margin-top:14px;font-size:12px;opacity:.85;line-height:1.5;}
+  .keys{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+  .key{
+    background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.3);
+    border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;
+  }
+  .hidden{display:none !important;}
+</style>
 </head>
 <body>
   <div class="hud">
     <div class="glass">
-      <div class="label">Innings</div>
+      <div class="label">Batting</div>
       <div class="value" id="hudPlayer">PLAYER 1</div>
+      <div class="wkts" id="hudWkts"></div>
     </div>
     <div class="glass right">
-      <div class="label">Runs (Meters)</div>
-      <div class="value glow"><span id="hudScore">0</span>m</div>
+      <div class="label">Runs</div>
+      <div class="value glow"><span id="hudScore">0</span></div>
+      <div class="label" style="margin-top:4px">Balls <span id="hudBalls">6</span></div>
     </div>
   </div>
 
@@ -92,8 +125,8 @@
   <div id="overlay">
     <div class="panel">
       <div class="badge" id="badge">🏏 HOTSEAT</div>
-      <h1 id="overlayTitle">READY?</h1>
-      <p class="sub" id="overlayText">Tap or press Space to jump over the wickets. One chance per player!</p>
+      <h1 id="overlayTitle">CRICKET<br>HOTSEAT SPRINT</h1>
+      <p class="sub" id="overlayText">Time your shot. Smash sixes. Pass the phone and beat your friends.</p>
 
       <div class="setup" id="setupControls">
         <div class="row">
@@ -107,409 +140,904 @@
       <button id="secondaryBtn" class="btn btn-secondary hidden">VIEW SCOREBOARD</button>
 
       <div class="scoreboard hidden" id="scoreboard"></div>
-      <div class="hint" id="hint">Tip: tap the screen, click, or press Space / ↑ to jump.</div>
+      <div class="hint" id="hint">
+        <div class="keys">
+          <span class="key">TAP</span><span class="key">CLICK</span><span class="key">SPACE</span>
+        </div>
+        <div style="margin-top:8px">Swing when the ball reaches the green zone. Perfect timing = SIX!</div>
+      </div>
     </div>
   </div>
 
-  <script>
-  (function () {
-    "use strict";
+<script>
+(function () {
+  "use strict";
 
-    var canvas = document.getElementById('game');
-    var ctx = canvas.getContext('2d');
-    var hudPlayer = document.getElementById('hudPlayer');
-    var hudScore = document.getElementById('hudScore');
-    var overlay = document.getElementById('overlay');
-    var overlayTitle = document.getElementById('overlayTitle');
-    var overlayText = document.getElementById('overlayText');
-    var badge = document.getElementById('badge');
-    var primaryBtn = document.getElementById('primaryBtn');
-    var secondaryBtn = document.getElementById('secondaryBtn');
-    var setupControls = document.getElementById('setupControls');
-    var scoreboardEl = document.getElementById('scoreboard');
-    var hintEl = document.getElementById('hint');
-    var playerCountInput = document.getElementById('playerCount');
-    var playerCountLabel = document.getElementById('playerCountLabel');
+  /* ============================================================
+     CRICKET HOTSEAT SPRINT
+     A timing-based cricket batting arcade game for 2-6 players.
+     Single self-contained file. No dependencies. No internet.
+     ============================================================ */
 
-    var W = 0, H = 0, DPR = 1;
-    var running = false;
-    var currentPlayer = 0;
-    var totalPlayers = 4;
-    var scores = [];
-    var speed = 6;
-    var distance = 0;
-    var obstacles = [];
-    var spawnTimer = 0;
-    var lastTime = 0;
-    var particles = [];
-    var clouds = [];
-    var groundY = 0;
+  // ---------- DOM ----------
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var hudPlayer = document.getElementById('hudPlayer');
+  var hudScore = document.getElementById('hudScore');
+  var hudBalls = document.getElementById('hudBalls');
+  var hudWkts = document.getElementById('hudWkts');
+  var overlay = document.getElementById('overlay');
+  var overlayTitle = document.getElementById('overlayTitle');
+  var overlayText = document.getElementById('overlayText');
+  var badge = document.getElementById('badge');
+  var primaryBtn = document.getElementById('primaryBtn');
+  var secondaryBtn = document.getElementById('secondaryBtn');
+  var setupControls = document.getElementById('setupControls');
+  var scoreboardEl = document.getElementById('scoreboard');
+  var hintEl = document.getElementById('hint');
+  var playerCountInput = document.getElementById('playerCount');
+  var playerCountLabel = document.getElementById('playerCountLabel');
 
-    var player = {
-      x: 0, y: 0, r: 25, vy: 0, rotation: 0,
-      jumpPower: -16, gravity: 0.8, onGround: false
-    };
+  // ---------- Constants ----------
+  var BALLS_PER_INNINGS = 6;
+  var MAX_WICKETS = 3;
+  var CONTACT = 0.85;          // progress at which the ball meets the bat
+  var ZONE_SIX = 0.045;
+  var ZONE_FOUR = 0.09;
+  var ZONE_TWO = 0.15;
+  var ZONE_ONE = 0.24;
+  var ZONE_WICKET = 0.40;      // worse than this = bowled
 
-    function resize() {
-      DPR = window.devicePixelRatio || 1;
-      W = window.innerWidth;
-      H = window.innerHeight;
-      canvas.width = Math.floor(W * DPR);
-      canvas.height = Math.floor(H * DPR);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      groundY = H * 0.8;
-      player.x = W * 0.2;
-      player.r = Math.max(14, Math.min(W, H) * 0.04);
-      if (!running) {
-        player.y = groundY - player.r;
+  // ---------- State ----------
+  var W = 0, H = 0, DPR = 1;
+  var groundY = 0, bowlerX = 0, batsmanX = 0, contactX = 0;
+  var state = 'menu';          // menu | ready | bowling | result | inningsEnd | matchEnd
+  var totalPlayers = 4;
+  var currentPlayer = 0;
+  var scores = [];
+  var wickets = [];
+  var ballsLeft = BALLS_PER_INNINGS;
+  var runs = 0;
+  var lastTime = 0;
+  var stateTimer = 0;
+
+  // ball
+  var ball = { active:false, progress:0, duration:1500, x:0, y:0, trail:[], flying:false, fx:0, fy:0, fvx:0, fvy:0, spin:0 };
+  // batsman swing
+  var swing = { active:false, t:0, dur:260 };
+  // bowler run-up
+  var bowler = { t:0, running:false };
+  // particles
+  var particles = [];
+  // clouds
+  var clouds = [];
+  // crowd
+  var crowd = [];
+  // floating result text
+  var popup = { text:'', sub:'', t:0, color:'#fff' };
+  // screen shake
+  var shake = 0;
+
+  // ---------- Audio (WebAudio, no files) ----------
+  var actx = null;
+  function audio() {
+    if (actx) return actx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) actx = new AC();
+    } catch (e) { actx = null; }
+    return actx;
+  }
+  function beep(freq, dur, type, vol) {
+    var a = audio();
+    if (!a) return;
+    try {
+      if (a.state === 'suspended') a.resume();
+      var o = a.createOscillator();
+      var g = a.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.value = vol == null ? 0.08 : vol;
+      o.connect(g); g.connect(a.destination);
+      var now = a.currentTime;
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      o.start(now); o.stop(now + dur);
+    } catch (e) { /* ignore */ }
+  }
+  function sfxHit(power) { beep(420 + power * 260, 0.16, 'square', 0.09); }
+  function sfxSix() { beep(660, 0.12, 'square', 0.1); setTimeout(function(){ beep(880, 0.18, 'square', 0.1); }, 90); }
+  function sfxWicket() { beep(180, 0.3, 'sawtooth', 0.1); setTimeout(function(){ beep(120, 0.35, 'sawtooth', 0.09); }, 120); }
+  function sfxTick() { beep(300, 0.05, 'triangle', 0.04); }
+
+  // ---------- Resize ----------
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    groundY = H * 0.80;
+    bowlerX = W * 0.14;
+    batsmanX = W * 0.80;
+    contactX = batsmanX - Math.max(26, W * 0.045);
+
+    buildClouds();
+    buildCrowd();
+  }
+
+  function buildClouds() {
+    clouds = [];
+    var n = Math.max(3, Math.round(W / 340));
+    for (var i = 0; i < n; i++) {
+      clouds.push({
+        x: Math.random() * W,
+        y: H * (0.06 + Math.random() * 0.24),
+        s: 0.6 + Math.random() * 0.9,
+        v: 0.12 + Math.random() * 0.22
+      });
+    }
+  }
+
+  function buildCrowd() {
+    crowd = [];
+    var n = Math.round(W / 14);
+    for (var i = 0; i < n; i++) {
+      crowd.push({
+        x: (i / n) * W + Math.random() * 8,
+        y: H * 0.30 + Math.random() * H * 0.10,
+        c: ['#f87171','#fbbf24','#60a5fa','#a78bfa','#34d399','#f472b6'][Math.floor(Math.random()*6)],
+        p: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  // ---------- Helpers ----------
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function spawnDust(x, y, n, color) {
+    for (var i = 0; i < (n || 8); i++) {
+      particles.push({
+        x: x, y: y,
+        vx: rand(-3, 3), vy: rand(-4, -0.5),
+        life: 1, size: rand(2, 5),
+        color: color || '#fef3c7'
+      });
+    }
+  }
+
+  // ---------- HUD ----------
+  function renderWickets() {
+    var html = '';
+    for (var i = 0; i < MAX_WICKETS; i++) {
+      html += '<span class="wkt' + (i < wickets[currentPlayer] ? ' lost' : '') + '"></span>';
+    }
+    hudWkts.innerHTML = html;
+  }
+  function updateHUD() {
+    hudPlayer.textContent = 'PLAYER ' + (currentPlayer + 1);
+    hudScore.textContent = runs;
+    hudBalls.textContent = ballsLeft;
+    renderWickets();
+  }
+
+  // ---------- Game flow ----------
+  function startMatch() {
+    totalPlayers = parseInt(playerCountInput.value, 10);
+    scores = new Array(totalPlayers).fill(0);
+    wickets = new Array(totalPlayers).fill(0);
+    currentPlayer = 0;
+    setupControls.classList.add('hidden');
+    scoreboardEl.classList.add('hidden');
+    secondaryBtn.classList.add('hidden');
+    hintEl.classList.add('hidden');
+    beginInnings();
+  }
+
+  function beginInnings() {
+    runs = 0;
+    wickets[currentPlayer] = 0;
+    ballsLeft = BALLS_PER_INNINGS;
+    updateHUD();
+    state = 'ready';
+    badge.textContent = '🏏 PLAYER ' + (currentPlayer + 1);
+    overlayTitle.innerHTML = 'PLAYER ' + (currentPlayer + 1);
+    overlayText.textContent = 'Get ready to bat. ' + BALLS_PER_INNINGS + ' balls, ' + MAX_WICKETS + ' wickets. Time your shots!';
+    primaryBtn.textContent = 'START INNINGS';
+    secondaryBtn.classList.add('hidden');
+    scoreboardEl.classList.add('hidden');
+    overlay.classList.remove('hidden');
+  }
+
+  function startInnings() {
+    overlay.classList.add('hidden');
+    state = 'bowling';
+    nextBall();
+  }
+
+  function nextBall() {
+    if (ballsLeft <= 0 || wickets[currentPlayer] >= MAX_WICKETS) {
+      endInnings();
+      return;
+    }
+    // ball speed ramps up as the innings progresses
+    var faced = BALLS_PER_INNINGS - ballsLeft;
+    ball.duration = Math.max(880, 1500 - faced * 95);
+    ball.active = true;
+    ball.flying = false;
+    ball.progress = 0;
+    ball.trail = [];
+    ball.spin = 0;
+    ball.x = bowlerX;
+    ball.y = groundY - 46;
+    bowler.running = true;
+    bowler.t = 0;
+    state = 'bowling';
+    updateHUD();
+  }
+
+  function swingBat() {
+    if (state !== 'bowling' || !ball.active || ball.flying) return;
+    swing.active = true;
+    swing.t = 0;
+
+    var err = Math.abs(ball.progress - CONTACT);
+    var outcome;
+
+    if (err < ZONE_SIX) outcome = { runs: 6, label: 'SIX!', sub: 'Into the stands!', color: '#ffd23f', power: 1 };
+    else if (err < ZONE_FOUR) outcome = { runs: 4, label: 'FOUR!', sub: 'Beautifully timed.', color: '#4ade80', power: 0.85 };
+    else if (err < ZONE_TWO) outcome = { runs: 2, label: '2 RUNS', sub: 'Good shot.', color: '#60a5fa', power: 0.6 };
+    else if (err < ZONE_ONE) outcome = { runs: 1, label: '1 RUN', sub: 'Scraped through.', color: '#a5b4fc', power: 0.4 };
+    else if (err < ZONE_WICKET) outcome = { runs: 0, label: 'DOT BALL', sub: 'Mistimed.', color: '#cbd5e1', power: 0.2 };
+    else outcome = { runs: -1, label: 'BOWLED!', sub: 'Wild swing — timber!', color: '#e63946', power: 0 };
+
+    resolveBall(outcome);
+  }
+
+  function resolveBall(outcome) {
+    ball.active = false;
+    ball.flying = true;
+    state = 'result';
+    stateTimer = 0;
+
+    if (outcome.runs === -1) {
+      // wicket
+      wickets[currentPlayer]++;
+      sfxWicket();
+      shake = 14;
+      spawnDust(contactX, groundY - 20, 16, '#fca5a5');
+      popup = { text: outcome.label, sub: outcome.sub, t: 1, color: outcome.color };
+      ball.fvx = rand(-1, 1); ball.fvy = rand(-2, 0);
+    } else {
+      runs += outcome.runs;
+      ballsLeft--;
+      if (outcome.runs >= 4) { sfxSix(); shake = outcome.runs === 6 ? 10 : 6; }
+      else if (outcome.runs > 0) sfxHit(outcome.power);
+      else sfxHit(0.1);
+
+      // ball flies away based on power
+      var ang = -Math.PI * (0.18 + Math.random() * 0.22);
+      var spd = 6 + outcome.power * 16;
+      ball.fvx = Math.cos(ang) * spd;
+      ball.fvy = Math.sin(ang) * spd;
+      spawnDust(contactX, groundY - 30, 6 + Math.round(outcome.power * 10), '#fef3c7');
+      popup = { text: outcome.label, sub: outcome.sub, t: 1, color: outcome.color };
+    }
+    updateHUD();
+  }
+
+  function endInnings() {
+    state = 'inningsEnd';
+    scores[currentPlayer] = runs;
+    var isLast = currentPlayer >= totalPlayers - 1;
+    badge.textContent = '🏏 INNINGS OVER';
+    overlayTitle.innerHTML = 'PLAYER ' + (currentPlayer + 1) + '<br>' + runs + ' RUNS';
+    overlayText.textContent = wickets[currentPlayer] + ' wicket' + (wickets[currentPlayer] === 1 ? '' : 's') + ' lost.';
+
+    if (isLast) {
+      primaryBtn.textContent = 'FINAL SCOREBOARD';
+      secondaryBtn.classList.add('hidden');
+    } else {
+      primaryBtn.textContent = 'NEXT: PLAYER ' + (currentPlayer + 2);
+      secondaryBtn.classList.add('hidden');
+    }
+    scoreboardEl.classList.add('hidden');
+    overlay.classList.remove('hidden');
+  }
+
+  function showScoreboard() {
+    state = 'matchEnd';
+    var best = Math.max.apply(null, scores);
+    var html = '';
+    for (var i = 0; i < scores.length; i++) {
+      var win = scores[i] === best ? ' win' : '';
+      var medal = scores[i] === best ? '<span class="medal">🏆</span>' : '';
+      html += '<div class="row' + win + '">' + medal + 'Player ' + (i + 1) +
+              '<span>' + scores[i] + ' runs</span></div>';
+    }
+    scoreboardEl.innerHTML = html;
+    scoreboardEl.classList.remove('hidden');
+    badge.textContent = '🏆 RESULT';
+    overlayTitle.innerHTML = 'WINNER!';
+    overlayText.textContent = 'Player ' + (scores.indexOf(best) + 1) + ' wins with ' + best + ' runs!';
+    primaryBtn.textContent = 'PLAY AGAIN';
+    secondaryBtn.textContent = 'NEW MATCH';
+    secondaryBtn.classList.remove('hidden');
+  }
+
+  function resetToMenu() {
+    state = 'menu';
+    currentPlayer = 0;
+    scores = [];
+    wickets = [];
+    runs = 0;
+    ballsLeft = BALLS_PER_INNINGS;
+    ball.active = false;
+    ball.flying = false;
+    overlayTitle.innerHTML = 'CRICKET<br>HOTSEAT SPRINT';
+    overlayText.textContent = 'Time your shot. Smash sixes. Pass the phone and beat your friends.';
+    badge.textContent = '🏏 HOTSEAT';
+    primaryBtn.textContent = 'START MATCH';
+    secondaryBtn.classList.add('hidden');
+    scoreboardEl.classList.add('hidden');
+    setupControls.classList.remove('hidden');
+    hintEl.classList.remove('hidden');
+    updateHUD();
+  }
+
+  // ---------- Update ----------
+  function update(dt) {
+    var step = Math.min(dt, 50) / 16.667;
+
+    // clouds always drift
+    for (var c = 0; c < clouds.length; c++) {
+      clouds[c].x -= clouds[c].v * step;
+      if (clouds[c].x < -140) {
+        clouds[c].x = W + 140;
+        clouds[c].y = H * (0.06 + Math.random() * 0.24);
       }
-      buildClouds();
     }
 
-    function buildClouds() {
-      clouds = [];
-      var n = Math.max(3, Math.round(W / 320));
-      for (var i = 0; i < n; i++) {
-        clouds.push({
-          x: Math.random() * W,
-          y: H * (0.08 + Math.random() * 0.28),
-          s: 0.6 + Math.random() * 0.9,
-          v: 0.15 + Math.random() * 0.25
-        });
+    // particles
+    for (var p = particles.length - 1; p >= 0; p--) {
+      var pt = particles[p];
+      pt.x += pt.vx * step;
+      pt.y += pt.vy * step;
+      pt.vy += 0.18 * step;
+      pt.life -= 0.028 * step;
+      if (pt.life <= 0) particles.splice(p, 1);
+    }
+
+    // popup fade
+    if (popup.t > 0) popup.t -= 0.012 * step;
+
+    // shake decay
+    if (shake > 0) shake = Math.max(0, shake - 0.7 * step);
+
+    // swing animation
+    if (swing.active) {
+      swing.t += dt;
+      if (swing.t >= swing.dur) swing.active = false;
+    }
+
+    // bowler run-up
+    if (bowler.running) {
+      bowler.t += dt;
+      if (bowler.t > 700) bowler.running = false;
+    }
+
+    // ball in flight
+    if (state === 'bowling' && ball.active) {
+      ball.progress += dt / ball.duration;
+      ball.x = lerp(bowlerX, batsmanX + 40, ball.progress);
+      ball.y = groundY - 46 - Math.sin(ball.progress * Math.PI) * 10;
+      ball.spin += 0.35 * step;
+
+      ball.trail.push({ x: ball.x, y: ball.y });
+      if (ball.trail.length > 12) ball.trail.shift();
+
+      // tick sound near the zone
+      if (ball.progress > CONTACT - 0.12 && ball.progress < CONTACT + 0.12) {
+        if (!ball._ticked) { sfxTick(); ball._ticked = true; }
+      }
+
+      // ball passed the bat with no swing -> dot ball
+      if (ball.progress > 1.02) {
+        ball._ticked = false;
+        resolveBall({ runs: 0, label: 'DOT BALL', sub: 'Left it alone.', color: '#cbd5e1', power: 0 });
       }
     }
 
-    function spawnObstacle() {
-      var types = ['stumps', 'bat', 'bottle'];
-      var type = types[Math.floor(Math.random() * types.length)];
-      var w, h;
-      if (type === 'stumps') { w = 40; h = 70; }
-      else if (type === 'bat') { w = 60; h = 30; }
-      else { w = 26; h = 52; }
-      obstacles.push({ x: W + 100, y: groundY, w: w, h: h, type: type, passed: false });
-    }
-
-    function spawnDust(x, y) {
-      for (var i = 0; i < 8; i++) {
-        particles.push({
-          x: x, y: y,
-          vx: (Math.random() - 0.5) * 3,
-          vy: -Math.random() * 3 - 1,
-          life: 1, size: 2 + Math.random() * 3
-        });
+    // ball flying away after contact
+    if (ball.flying) {
+      ball.x += ball.fvx * step;
+      ball.y += ball.fvy * step;
+      ball.fvy += 0.55 * step;
+      ball.spin += 0.5 * step;
+      if (ball.y > groundY - 8) {
+        ball.y = groundY - 8;
+        ball.fvy *= -0.45;
+        ball.fvx *= 0.7;
+        if (Math.abs(ball.fvy) < 0.6) ball.fvy = 0;
       }
     }
 
-    function update(dt) {
-      if (!running) return;
-      var step = Math.min(dt, 50) / 16.67; // normalize to ~60fps
-
-      distance += speed * 0.1 * step;
-      speed += 0.002 * step;
-      hudScore.innerText = Math.floor(distance);
-
-      // Physics
-      player.vy += player.gravity * step;
-      player.y += player.vy * step;
-      player.rotation += speed * 0.05 * step;
-
-      var ground = groundY - player.r;
-      if (player.y > ground) {
-        if (!player.onGround) spawnDust(player.x, groundY);
-        player.y = ground;
-        player.vy = 0;
-        player.onGround = true;
-      }
-
-      // Obstacles
-      spawnTimer -= dt;
-      if (spawnTimer < 0) {
-        spawnObstacle();
-        spawnTimer = 900 + Math.random() * 1400;
-      }
-
-      for (var i = obstacles.length - 1; i >= 0; i--) {
-        var o = obstacles[i];
-        o.x -= speed * step;
-        // Collision (circle vs rect)
-        var cx = Math.max(o.x, Math.min(player.x, o.x + o.w));
-        var cy = Math.max(o.y - o.h, Math.min(player.y, o.y));
-        var dx = player.x - cx, dy = player.y - cy;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < player.r * 0.8) { gameOver(); return; }
-        if (!o.passed && o.x + o.w < player.x) {
-          o.passed = true;
-          distance += 5; // bonus for clearing an obstacle
+    // result -> advance
+    if (state === 'result') {
+      stateTimer += dt;
+      if (stateTimer > 1500) {
+        ball._ticked = false;
+        if (ballsLeft <= 0 || wickets[currentPlayer] >= MAX_WICKETS) {
+          endInnings();
+        } else {
+          nextBall();
         }
-        if (o.x < -120) obstacles.splice(i, 1);
-      }
-
-      // Particles
-      for (var p = particles.length - 1; p >= 0; p--) {
-        var pt = particles[p];
-        pt.x += pt.vx * step;
-        pt.y += pt.vy * step;
-        pt.vy += 0.15 * step;
-        pt.life -= 0.03 * step;
-        if (pt.life <= 0) particles.splice(p, 1);
-      }
-
-      // Clouds
-      for (var c = 0; c < clouds.length; c++) {
-        clouds[c].x -= clouds[c].v * step;
-        if (clouds[c].x < -120) { clouds[c].x = W + 120; clouds[c].y = H * (0.08 + Math.random() * 0.28); }
       }
     }
+  }
 
-    function drawCloud(x, y, s) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(s, s);
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  // ---------- Draw ----------
+  function drawCloud(x, y, s) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(255,255,255,.78)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.arc(26, 6, 18, 0, Math.PI * 2);
+    ctx.arc(-26, 6, 16, 0, Math.PI * 2);
+    ctx.arc(6, -12, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawStands() {
+    var top = H * 0.26;
+    var bottom = groundY;
+    var g = ctx.createLinearGradient(0, top, 0, bottom);
+    g.addColorStop(0, '#0a1a33');
+    g.addColorStop(1, '#12305c');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, top, W, bottom - top);
+
+    // crowd dots
+    for (var i = 0; i < crowd.length; i++) {
+      var c = crowd[i];
+      var bob = Math.sin(c.p + performance.now() * 0.002) * 2;
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = c.c;
       ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.arc(26, 6, 18, 0, Math.PI * 2);
-      ctx.arc(-26, 6, 16, 0, Math.PI * 2);
-      ctx.arc(6, -12, 16, 0, Math.PI * 2);
+      ctx.arc(c.x, c.y + bob, 3.2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
+    ctx.globalAlpha = 1;
 
-    function drawObstacle(o) {
-      if (o.type === 'stumps') {
-        ctx.fillStyle = '#fde047';
-        ctx.strokeStyle = '#a16207';
-        ctx.lineWidth = 2;
-        var sw = o.w / 3;
-        for (var i = 0; i < 3; i++) {
-          ctx.fillRect(o.x + i * sw + 2, o.y - o.h, sw - 4, o.h);
-          ctx.strokeRect(o.x + i * sw + 2, o.y - o.h, sw - 4, o.h);
-        }
-        // bails
-        ctx.fillStyle = '#f59e0b';
-        ctx.fillRect(o.x, o.y - o.h - 6, o.w, 5);
-      } else if (o.type === 'bat') {
-        ctx.fillStyle = '#c084fc';
-        ctx.strokeStyle = '#7e22ce';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect ? ctx.roundRect(o.x, o.y - o.h, o.w, o.h, 6) : ctx.rect(o.x, o.y - o.h, o.w, o.h);
-        ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#78350f';
-        ctx.fillRect(o.x + o.w - 12, o.y - o.h - 14, 10, 16);
-      } else {
-        ctx.fillStyle = '#22c55e';
-        ctx.strokeStyle = '#166534';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect ? ctx.roundRect(o.x, o.y - o.h, o.w, o.h, 8) : ctx.rect(o.x, o.y - o.h, o.w, o.h);
-        ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#dc2626';
-        ctx.fillRect(o.x + 4, o.y - o.h + 6, o.w - 8, 8);
-      }
+    // roof line
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    ctx.fillRect(0, top, W, 6);
+  }
+
+  function drawGround() {
+    // grass
+    var g = ctx.createLinearGradient(0, groundY, 0, H);
+    g.addColorStop(0, '#22c55e');
+    g.addColorStop(1, '#0f6b32');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, groundY, W, H - groundY);
+
+    // mow stripes
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = '#ffffff';
+    var stripeW = 70;
+    for (var x = 0; x < W; x += stripeW * 2) {
+      ctx.fillRect(x, groundY, stripeW, H - groundY);
     }
+    ctx.restore();
 
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
+    // boundary rope
+    ctx.strokeStyle = 'rgba(255,255,255,.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(W, groundY);
+    ctx.stroke();
+  }
 
-      // Sky gradient
-      var sky = ctx.createLinearGradient(0, 0, 0, groundY);
-      sky.addColorStop(0, '#38bdf8');
-      sky.addColorStop(1, '#bae6fd');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, W, groundY);
+  function drawPitch() {
+    var pitchTop = groundY + 6;
+    var pitchH = Math.max(26, H * 0.055);
+    var g = ctx.createLinearGradient(0, pitchTop, 0, pitchTop + pitchH);
+    g.addColorStop(0, '#e0bd77');
+    g.addColorStop(1, '#c39a4e');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.06, pitchTop);
+    ctx.lineTo(W * 0.94, pitchTop);
+    ctx.lineTo(W * 0.99, pitchTop + pitchH);
+    ctx.lineTo(W * 0.01, pitchTop + pitchH);
+    ctx.closePath();
+    ctx.fill();
 
-      // Clouds
-      for (var c = 0; c < clouds.length; c++) drawCloud(clouds[c].x, clouds[c].y, clouds[c].s);
-
-      // Ground
-      var grass = ctx.createLinearGradient(0, groundY, 0, H);
-      grass.addColorStop(0, '#22c55e');
-      grass.addColorStop(1, '#15803d');
-      ctx.fillStyle = grass;
-      ctx.fillRect(0, groundY, W, H - groundY);
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 4;
+    // creases
+    ctx.strokeStyle = 'rgba(255,255,255,.75)';
+    ctx.lineWidth = 2;
+    [bowlerX, batsmanX].forEach(function (cx) {
       ctx.beginPath();
-      ctx.moveTo(0, groundY);
-      ctx.lineTo(W, groundY);
+      ctx.moveTo(cx, pitchTop);
+      ctx.lineTo(cx, pitchTop + pitchH);
       ctx.stroke();
+    });
+  }
 
-      // Pitch stripes
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 2;
-      for (var sx = (distance * 2) % 80; sx < W; sx += 80) {
-        ctx.beginPath();
-        ctx.moveTo(sx, groundY);
-        ctx.lineTo(sx - 30, H);
-        ctx.stroke();
-      }
+  function drawStumps(x) {
+    var baseY = groundY + 4;
+    var h = Math.max(30, H * 0.055);
+    var w = 5;
+    ctx.fillStyle = '#fde047';
+    ctx.strokeStyle = '#a16207';
+    ctx.lineWidth = 1.5;
+    for (var i = -1; i <= 1; i++) {
+      var sx = x + i * (w + 3) - w / 2;
+      ctx.fillRect(sx, baseY - h, w, h);
+      ctx.strokeRect(sx, baseY - h, w, h);
+    }
+    // bails
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(x - (w + 3) - w / 2, baseY - h - 5, (w + 3) * 2 + w, 4);
+  }
 
-      // Obstacles
-      for (var i = 0; i < obstacles.length; i++) drawObstacle(obstacles[i]);
+  function drawBowler() {
+    var x = bowlerX;
+    var y = groundY;
+    var run = bowler.running ? Math.sin(bowler.t * 0.02) : 0;
+    var lean = bowler.running ? 6 : 0;
 
-      // Particles
-      for (var p = 0; p < particles.length; p++) {
-        var pt = particles[p];
-        ctx.globalAlpha = Math.max(0, pt.life);
-        ctx.fillStyle = '#fef3c7';
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
+    ctx.save();
+    ctx.translate(x, y);
 
-      // Player (cricket ball)
-      ctx.save();
-      ctx.translate(player.x, player.y);
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 16, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-      // Shadow
+    // legs
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, -34);
+    ctx.lineTo(-6 + run * 6, -2);
+    ctx.moveTo(0, -34);
+    ctx.lineTo(6 - run * 6, -2);
+    ctx.stroke();
+
+    // body
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.moveTo(0, -34);
+    ctx.lineTo(lean, -58);
+    ctx.stroke();
+
+    // head
+    ctx.fillStyle = '#fcd9b6';
+    ctx.beginPath();
+    ctx.arc(lean, -66, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // arm (bowling)
+    ctx.strokeStyle = '#fcd9b6';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(lean, -56);
+    ctx.lineTo(lean + 14, -74 + run * 4);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawBatsman() {
+    var x = batsmanX;
+    var y = groundY;
+
+    // swing angle
+    var ang = 0;
+    if (swing.active) {
+      var t = swing.t / swing.dur;
+      ang = Math.sin(t * Math.PI) * 2.1; // sweep through
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 18, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // legs (pads)
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, -36);
+    ctx.lineTo(-7, -2);
+    ctx.moveTo(0, -36);
+    ctx.lineTo(7, -2);
+    ctx.stroke();
+
+    // body
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 13;
+    ctx.beginPath();
+    ctx.moveTo(0, -36);
+    ctx.lineTo(-2, -62);
+    ctx.stroke();
+
+    // head + helmet
+    ctx.fillStyle = '#fcd9b6';
+    ctx.beginPath();
+    ctx.arc(-2, -70, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1e3a8a';
+    ctx.beginPath();
+    ctx.arc(-2, -72, 10, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(-12, -73, 20, 3);
+
+    // bat (pivots at hands)
+    ctx.save();
+    ctx.translate(-2, -58);
+    ctx.rotate(-0.5 + ang);
+    ctx.fillStyle = '#c084fc';
+    ctx.strokeStyle = '#7e22ce';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-4, 0, 9, 34, 3);
+    else ctx.rect(-4, 0, 9, 34);
+    ctx.fill(); ctx.stroke();
+    // handle
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(-3, -12, 7, 13);
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawBall() {
+    if (!ball.active && !ball.flying) return;
+
+    // trail
+    for (var i = 0; i < ball.trail.length; i++) {
+      var t = ball.trail[i];
+      var a = (i / ball.trail.length) * 0.35;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = '#fca5a5';
       ctx.beginPath();
-      ctx.fillStyle = 'rgba(0,0,0,0.18)';
-      ctx.ellipse(0, groundY - player.y, player.r * 1.05, player.r * 0.32, 0, 0, Math.PI * 2);
+      ctx.arc(t.x, t.y, 4 + i * 0.25, 0, Math.PI * 2);
       ctx.fill();
+    }
+    ctx.globalAlpha = 1;
 
-      ctx.rotate(player.rotation);
-      // Ball
-      var ballGrad = ctx.createRadialGradient(-player.r * 0.3, -player.r * 0.3, player.r * 0.2, 0, 0, player.r);
-      ballGrad.addColorStop(0, '#f87171');
-      ballGrad.addColorStop(1, '#b91c1c');
+    var r = Math.max(7, Math.min(W, H) * 0.014);
+
+    // shadow on ground
+    ctx.fillStyle = 'rgba(0,0,0,.16)';
+    ctx.beginPath();
+    ctx.ellipse(ball.x, groundY + 2, r * 1.1, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ball
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+    ctx.rotate(ball.spin);
+    var g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r);
+    g.addColorStop(0, '#f87171');
+    g.addColorStop(1, '#b91c1c');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    // seam
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = Math.max(1.5, r * 0.14);
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.9, -0.6, 0.6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.9, Math.PI - 0.6, Math.PI + 0.6);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawTimingBar() {
+    if (state !== 'bowling' && state !== 'result') return;
+    var barW = Math.min(W * 0.8, 620);
+    var barH = 16;
+    var bx = (W - barW) / 2;
+    var by = H - 54;
+
+    // track
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    if (ctx.roundRect) {
+      ctx.beginPath(); ctx.roundRect(bx, by, barW, barH, barH / 2); ctx.fill();
+    } else {
+      ctx.fillRect(bx, by, barW, barH);
+    }
+
+    // zones (mirror around CONTACT)
+    function zone(center, half, color) {
+      var x1 = bx + (center - half) * barW;
+      var w = half * 2 * barW;
+      ctx.fillStyle = color;
+      ctx.fillRect(x1, by, w, barH);
+    }
+    zone(CONTACT, ZONE_WICKET, 'rgba(148,163,184,.35)');
+    zone(CONTACT, ZONE_ONE, 'rgba(96,165,250,.55)');
+    zone(CONTACT, ZONE_TWO, 'rgba(74,222,128,.6)');
+    zone(CONTACT, ZONE_FOUR, 'rgba(250,204,21,.75)');
+    zone(CONTACT, ZONE_SIX, 'rgba(255,255,255,.95)');
+
+    // needle
+    var nx = bx + clamp(ball.progress, 0, 1) * barW;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(nx, by - 6);
+    ctx.lineTo(nx, by + barH + 6);
+    ctx.stroke();
+
+    // label
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.font = '700 11px Trebuchet MS, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TIME YOUR SHOT', W / 2, by - 12);
+    ctx.textAlign = 'left';
+  }
+
+  function drawPopup() {
+    if (popup.t <= 0) return;
+    var a = clamp(popup.t, 0, 1);
+    var scale = 1 + (1 - a) * 0.25;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(W / 2, H * 0.34);
+    ctx.scale(scale, scale);
+    ctx.textAlign = 'center';
+    ctx.font = '900 ' + Math.round(Math.min(W, H) * 0.09) + 'px Trebuchet MS, sans-serif';
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = 'rgba(0,0,0,.5)';
+    ctx.strokeText(popup.text, 0, 0);
+    ctx.fillStyle = popup.color;
+    ctx.fillText(popup.text, 0, 0);
+    ctx.font = '700 ' + Math.round(Math.min(W, H) * 0.028) + 'px Trebuchet MS, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.fillText(popup.sub, 0, Math.round(Math.min(W, H) * 0.05));
+    ctx.restore();
+    ctx.textAlign = 'left';
+  }
+
+  function draw() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    // screen shake
+    if (shake > 0) {
+      ctx.translate(rand(-shake, shake) * 0.4, rand(-shake, shake) * 0.4);
+    }
+
+    // sky
+    var sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, '#0b3d91');
+    sky.addColorStop(0.55, '#1e6fd9');
+    sky.addColorStop(1, '#7fc4ff');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, groundY);
+
+    // clouds
+    for (var c = 0; c < clouds.length; c++) drawCloud(clouds[c].x, clouds[c].y, clouds[c].s);
+
+    // stands + ground + pitch
+    drawStands();
+    drawGround();
+    drawPitch();
+
+    // stumps at both ends
+    drawStumps(bowlerX);
+    drawStumps(batsmanX);
+
+    // figures
+    drawBowler();
+    drawBatsman();
+
+    // particles
+    for (var p = 0; p < particles.length; p++) {
+      var pt = particles[p];
+      ctx.globalAlpha = clamp(pt.life, 0, 1);
+      ctx.fillStyle = pt.color;
       ctx.beginPath();
-      ctx.arc(0, 0, player.r, 0, Math.PI * 2);
-      ctx.fillStyle = ballGrad;
+      ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
       ctx.fill();
-      // Seam
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = Math.max(2, player.r * 0.12);
-      ctx.beginPath();
-      ctx.arc(0, 0, player.r * 0.92, -0.5, 0.5);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(0, 0, player.r * 0.92, Math.PI - 0.5, Math.PI + 0.5);
-      ctx.stroke();
-      ctx.restore();
     }
+    ctx.globalAlpha = 1;
 
-    function loop(t) {
-      var dt = lastTime ? t - lastTime : 16.67;
-      lastTime = t;
-      update(dt);
-      draw();
-      requestAnimationFrame(loop);
+    // ball
+    drawBall();
+
+    // timing bar
+    drawTimingBar();
+
+    // popup
+    drawPopup();
+  }
+
+  // ---------- Main loop (single loop, no duplicates) ----------
+  function loop(t) {
+    var dt = lastTime ? t - lastTime : 16.667;
+    lastTime = t;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- Input ----------
+  function onAction() {
+    if (state === 'bowling') {
+      swingBat();
     }
+  }
 
-    function gameOver() {
-      running = false;
-      scores[currentPlayer] = Math.floor(distance);
-      spawnDust(player.x, groundY);
+  window.addEventListener('pointerdown', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.panel')) return;
+    onAction();
+  });
 
-      var isLastPlayer = currentPlayer === totalPlayers - 1;
-      overlayTitle.innerText = 'WICKET!';
-      overlayText.innerText = 'Player ' + (currentPlayer + 1) + ' scored ' + Math.floor(distance) + ' runs.';
-      badge.innerText = '🏏 OUT';
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+      e.preventDefault();
+      onAction();
+    }
+  });
 
-      if (isLastPlayer) {
-        primaryBtn.innerText = 'NEW TOURNAMENT';
-        secondaryBtn.classList.remove('hidden');
+  primaryBtn.addEventListener('click', function () {
+    if (state === 'menu') {
+      startMatch();
+    } else if (state === 'ready') {
+      startInnings();
+    } else if (state === 'inningsEnd') {
+      if (currentPlayer >= totalPlayers - 1) {
         showScoreboard();
       } else {
-        primaryBtn.innerText = 'READY PLAYER ' + (currentPlayer + 2);
-        secondaryBtn.classList.add('hidden');
-        scoreboardEl.classList.add('hidden');
-      }
-      overlay.classList.remove('hidden');
-    }
-
-    function showScoreboard() {
-      var best = Math.max.apply(null, scores);
-      var html = '';
-      for (var i = 0; i < scores.length; i++) {
-        var win = scores[i] === best ? ' win' : '';
-        var medal = scores[i] === best ? '<span class="medal">🏆</span>' : '';
-        html += '<div class="row' + win + '">' + medal + 'Player ' + (i + 1) + '<span>' + scores[i] + ' runs</span></div>';
-      }
-      scoreboardEl.innerHTML = html;
-      scoreboardEl.classList.remove('hidden');
-    }
-
-    function resetGame() {
-      distance = 0;
-      speed = 7;
-      obstacles = [];
-      particles = [];
-      spawnTimer = 600;
-      player.y = groundY - player.r;
-      player.vy = 0;
-      player.rotation = 0;
-      player.onGround = true;
-      running = true;
-      lastTime = 0;
-      overlay.classList.add('hidden');
-      hudPlayer.innerText = 'PLAYER ' + (currentPlayer + 1);
-      hudScore.innerText = '0';
-    }
-
-    function jump() {
-      if (running && player.onGround) {
-        player.vy = player.jumpPower;
-        player.onGround = false;
-        spawnDust(player.x, groundY);
-      }
-    }
-
-    function startMatch() {
-      totalPlayers = parseInt(playerCountInput.value, 10);
-      scores = new Array(totalPlayers).fill(0);
-      currentPlayer = 0;
-      setupControls.classList.add('hidden');
-      scoreboardEl.classList.add('hidden');
-      secondaryBtn.classList.add('hidden');
-      badge.innerText = '🏏 HOTSEAT';
-      resetGame();
-    }
-
-    primaryBtn.addEventListener('click', function () {
-      if (!running && (currentPlayer === totalPlayers - 1 || scores.length === 0)) {
-        startMatch();
-      } else {
         currentPlayer++;
-        resetGame();
+        beginInnings();
       }
-    });
+    } else if (state === 'matchEnd') {
+      startMatch();
+    }
+  });
 
-    secondaryBtn.addEventListener('click', function () {
-      // Back to setup for a fresh tournament
-      currentPlayer = 0;
-      scores = [];
-      overlayTitle.innerText = 'READY?';
-      overlayText.innerText = 'Tap or press Space to jump over the wickets. One chance per player!';
-      badge.innerText = '🏏 HOTSEAT';
-      primaryBtn.innerText = 'START MATCH';
-      secondaryBtn.classList.add('hidden');
-      scoreboardEl.classList.add('hidden');
-      setupControls.classList.remove('hidden');
-    });
+  secondaryBtn.addEventListener('click', function () {
+    resetToMenu();
+  });
 
-    playerCountInput.addEventListener('input', function (e) {
-      playerCountLabel.innerText = e.target.value;
-    });
+  playerCountInput.addEventListener('input', function (e) {
+    playerCountLabel.textContent = e.target.value;
+  });
 
-    // Controls: tap / click / keyboard
-    window.addEventListener('pointerdown', function (e) {
-      if (e.target.closest && e.target.closest('.panel')) return; // don't jump when tapping buttons
-      jump();
-    });
-    window.addEventListener('keydown', function (e) {
-      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-        e.preventDefault();
-        jump();
-      }
-    });
+  window.addEventListener('resize', resize);
 
-    window.addEventListener('resize', resize);
-    resize();
-    requestAnimationFrame(loop);
-  })();
-  </script>
+  // ---------- Boot ----------
+  resize();
+  updateHUD();
+  requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
